@@ -43,7 +43,7 @@ Go to the **[Releases page](https://github.com/ROGR3/HVB-Corrector-App/releases/
 and download the file for your system. Nothing else is needed.
 
 - **Windows:** two `.exe` files are on the Releases page:
-  - **`hvb-corrector-app.exe`** (standalone) — just double-click and run,
+  - **`hvb-corrector-app_windows_x64.exe`** (standalone) — just double-click and run,
     no install step. Try this first.
   - **`HVB.Corrector_0.1.2_x64-setup.exe`** (installer) — use this only if
     the standalone one fails to start (typically means the WebView2

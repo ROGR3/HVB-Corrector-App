@@ -46,7 +46,7 @@ Přejděte na **[stránku Releases](https://github.com/ROGR3/HVB-Corrector-App/r
 a stáhněte soubor pro váš systém. Nic dalšího není potřeba.
 
 - **Windows:** na stránce Releases jsou dva soubory `.exe`:
-  - **`hvb-corrector-app.exe`** (samostatný) — dvojklikem spustíte, žádná
+  - **`hvb-corrector-app_windows_x64.exe`** (samostatný) — dvojklikem spustíte, žádná
     instalace potřeba. Zkuste tento první.
   - **`HVB.Corrector_0.1.2_x64-setup.exe`** (instalátor) — použijte jen
     pokud se samostatný soubor nespustí (obvykle chybí runtime WebView2;
