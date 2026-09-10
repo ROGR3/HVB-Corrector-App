@@ -14,8 +14,7 @@ of an intervention (a vaccine, a screening program, anything with a clear
 
 The app does not do statistics for you beyond this one correction — it
 takes event counts you already have, computes both estimates for each time
-period and subgroup, and lets you compare them on a chart. No installation
-of Python, R, or any programming tool is needed to use it.
+period and subgroup, and lets you compare them on a chart.
 
 **No programming or command line is required for normal use.** The steps
 below only ever involve downloading a file and double-clicking it.
@@ -37,8 +36,7 @@ After loading a CSV file (see below), you get:
 ## Installing
 
 Go to the **[Releases page](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**
-and download the file for your system. Nothing else is needed — no Python,
-no separate runtime.
+and download the file for your system. Nothing else is needed.
 
 - **Windows:** download the `.exe` installer (e.g.
   `HVB.Corrector_0.1.1_x64-setup.exe`), double-click it, and follow the

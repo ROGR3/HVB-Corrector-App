@@ -15,8 +15,6 @@ rozdělení „před/po" nebo „exponovaní/neexponovaní"):
 Aplikace za vás nedělá žádnou další statistiku nad rámec téhle jedné
 korekce — vezme počty událostí, které už máte, spočítá oba odhady pro
 každé časové období a podskupinu, a nechá vás je porovnat na grafu.
-K použití není potřeba instalovat Python, R ani jiný programovací
-nástroj.
 
 **Pro běžné použití nepotřebujete programování ani příkazovou řádku.**
 Všechny kroky níže se skládají jen ze stažení souboru a jeho spuštění
@@ -41,8 +39,7 @@ Po nahrání CSV souboru (viz níže) uvidíte:
 ## Instalace
 
 Přejděte na **[stránku Releases](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**
-a stáhněte soubor pro váš systém. Nic dalšího není potřeba — žádný
-Python, žádné samostatné prostředí.
+a stáhněte soubor pro váš systém. Nic dalšího není potřeba.
 
 - **Windows:** stáhněte instalátor `.exe` (např.
   `HVB.Corrector_0.1.1_x64-setup.exe`), dvojklikem ho spusťte a
