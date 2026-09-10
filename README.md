@@ -33,6 +33,10 @@ After loading a CSV file (see below), you get:
 - A warning flag (⚠) on any point based on very few events — those numbers
   are real, but statistically noisy, so they are marked rather than hidden.
 
+![Screenshot of the HVB Corrector app showing apparent vs. corrected VE over time for three age strata, loaded with the bundled sample data](docs/images/lines-over-time.png)
+
+*(Real screenshot, loaded with the bundled [sample data](example_data/sample.csv))*
+
 ## Installing
 
 Go to the **[Releases page](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**

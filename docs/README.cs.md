@@ -36,6 +36,10 @@ Po nahrání CSV souboru (viz níže) uvidíte:
   jsou reálná, ale statisticky nestabilní, proto jsou označená, ne
   skrytá.
 
+![Snímek obrazovky aplikace HVB Corrector se zjevnou a korigovanou účinností v čase pro tři věková pásma, nahráno s přiloženými ukázkovými daty](images/lines-over-time.png)
+
+*(Skutečný snímek obrazovky s přiloženými [ukázkovými daty](../example_data/sample.csv))*
+
 ## Instalace
 
 Přejděte na **[stránku Releases](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**
