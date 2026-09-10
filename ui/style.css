@@ -1,0 +1,161 @@
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --panel-2: #eef1f5;
+  --text: #1c2530;
+  --muted: #5b6675;
+  --apparent: #c0392b;
+  --corr: #1e8449;
+  --border: #d8dee6;
+  --accent: #2471a3;
+}
+
+* { box-sizing: border-box; }
+
+html { overflow-y: scroll; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+header {
+  padding: 28px 32px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+h1 { margin: 0 0 6px; font-size: 1.5rem; }
+h2 { margin: 0 0 12px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.sub { margin: 0; color: var(--muted); max-width: 70ch; }
+
+main {
+  padding: 24px 32px 48px;
+  display: grid;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+label { color: var(--text); font-size: 0.9rem; }
+.hint { color: var(--muted); font-size: 0.8rem; margin: 6px 0 0; }
+code { background: var(--panel-2); border-radius: 4px; padding: 1px 5px; font-size: 0.85em; }
+
+select, input[type="number"] {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+input[type="number"] { width: 64px; }
+
+button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+button:hover { border-color: var(--accent); }
+button.secondary { background: transparent; }
+
+.stratum-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.check input { accent-color: var(--accent); }
+
+.chart-card { padding-bottom: 8px; }
+.canvas-wrap { position: relative; width: 100%; height: 460px; }
+
+.time-head { justify-content: space-between; align-items: center; }
+.time-head h2 { margin: 0; }
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+.time-cell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.time-cell h3 { margin: 0 0 4px; font-size: 0.95rem; }
+.time-cell .meta { color: var(--muted); font-size: 0.78rem; margin: 0 0 6px; }
+.time-cell .canvas-wrap { height: 240px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; cursor: help; }
+tr.unreliable td { color: var(--muted); font-style: italic; }
+.flag { color: #b8860b; }
+
+/* Upload view */
+.upload-card { max-width: 760px; margin: 0 auto; }
+.format-example {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-top: 14px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.drop-zone.drag-over { border-color: var(--accent); background: var(--panel-2); }
+.drop-zone .row { justify-content: center; margin-top: 12px; }
+
+.error-panel {
+  margin-top: 16px;
+  border: 1px solid #e0a1a1;
+  background: #fdf1f1;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.error-panel h3 { color: #a12a2a; }
+.error-panel ul { margin: 0; padding-left: 20px; font-size: 0.85rem; }

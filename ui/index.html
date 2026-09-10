@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HVB Corrector</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>HVB Corrector</h1>
+    <p class="sub">Apparent vs. corrected effectiveness estimate from a simple event-count CSV.</p>
+  </header>
+
+  <main>
+    <section id="uploadView" class="card upload-card">
+      <h2>Load data</h2>
+      <p class="hint">
+        A CSV with one row per (period, stratum, group). Required columns:
+        <code>period,stratum,group,target_events,reference_events</code>, plus an optional
+        <code>population</code> column (needed only for the apparent estimate).
+        <code>group</code> must be exactly <code>exposed</code> or <code>unexposed</code>.
+      </p>
+      <pre class="format-example">period,stratum,group,target_events,reference_events,population
+2021-03,60-79,exposed,12,340,50000
+2021-03,60-79,unexposed,45,210,30000</pre>
+
+      <div id="dropZone" class="drop-zone">
+        <p>Drag &amp; drop a CSV file here</p>
+        <div class="row">
+          <button id="chooseFileBtn" type="button">Choose CSV file&hellip;</button>
+          <button id="sampleBtn" type="button" class="secondary">Load sample data</button>
+        </div>
+      </div>
+
+      <div id="errorPanel" class="error-panel" hidden>
+        <h3 id="errorTitle">Could not load this file</h3>
+        <ul id="errorList"></ul>
+      </div>
+    </section>
+
+    <section id="appView" hidden>
+      <section class="controls">
+        <div class="card">
+          <h2>Time window</h2>
+          <div class="row">
+            <label>From <select id="startPeriod"></select></label>
+            <label>To <select id="endPeriod"></select></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Strata</h2>
+          <div class="row">
+            <button id="selAll" type="button">All</button>
+            <button id="selNone" type="button">None</button>
+          </div>
+          <div id="stratumList" class="stratum-list"></div>
+        </div>
+
+        <div class="card">
+          <h2>View &amp; series</h2>
+          <div class="row">
+            <label class="check"><input type="radio" name="view" id="viewBars" /> Bars by stratum</label>
+            <label class="check"><input type="radio" name="view" id="viewTime" checked /> Lines over time</label>
+          </div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="showApparent" checked /> Apparent VE</label>
+            <label class="check"><input type="checkbox" id="showCorr" checked /> Corrected VE</label>
+          </div>
+          <div class="row" id="rollRow">
+            <label>Rolling window <input type="number" id="rollWindow" value="1" min="1" max="48" step="1" /> periods</label>
+          </div>
+          <div class="row" id="veYRow">
+            <label>Y min <input type="number" id="veYMin" value="-100" step="10" /></label>
+            <label>Y max <input type="number" id="veYMax" value="100" step="10" /></label>
+            <label class="check"><input type="checkbox" id="veYHideOut" /> Hide points outside range</label>
+          </div>
+          <p class="hint" id="reliabilityNote">Hover a point for exact values. In the time view, drag to select a zoom region (X axis).</p>
+          <button id="reloadBtn" type="button" class="secondary">Load a different file</button>
+        </div>
+      </section>
+
+      <section class="card chart-card" id="barsCard">
+        <h2 id="chartTitle">Estimated VE by stratum</h2>
+        <div class="canvas-wrap"><canvas id="barCanvas"></canvas></div>
+      </section>
+
+      <section class="chart-card" id="timeCard" hidden>
+        <div class="row time-head">
+          <h2 id="timeTitle">VE over time by stratum</h2>
+          <button id="resetZoom" type="button">Reset zoom</button>
+        </div>
+        <p class="hint" id="timeHint"></p>
+        <div id="timeGrid" class="time-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Underlying counts</h2>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th>Stratum</th>
+                <th title="target events, exposed">Target (exposed)</th>
+                <th title="reference events, exposed">Reference (exposed)</th>
+                <th title="target events, unexposed">Target (unexposed)</th>
+                <th title="reference events, unexposed">Reference (unexposed)</th>
+                <th>Apparent VE</th>
+                <th>Corrected VE</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="hint">
+          Apparent VE = 1 &minus; (target<sub>exposed</sub>/population<sub>exposed</sub>)/(target<sub>unexposed</sub>/population<sub>unexposed</sub>).
+          Corrected VE = 1 &minus; (target<sub>exposed</sub>&middot;reference<sub>unexposed</sub>)/(reference<sub>exposed</sub>&middot;target<sub>unexposed</sub>).
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="vendor/chartjs-plugin-zoom.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
