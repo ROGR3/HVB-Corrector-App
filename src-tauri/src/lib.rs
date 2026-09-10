@@ -39,8 +39,6 @@ fn load_path(path: PathBuf) -> LoadOutcome {
     }
 }
 
-const SAMPLE_CSV: &str = include_str!("../../example_data/sample.csv");
-
 #[tauri::command]
 fn load_dataset_from_path(path: String) -> LoadOutcome {
     load_path(PathBuf::from(path))
@@ -49,14 +47,6 @@ fn load_dataset_from_path(path: String) -> LoadOutcome {
 #[tauri::command]
 fn load_dataset_from_contents(contents: String) -> LoadOutcome {
     match csv_ingest::load_from_str(&contents) {
-        Ok(rows) => LoadOutcome::Dataset(aggregate::build_dataset(&rows)),
-        Err(err) => err.into(),
-    }
-}
-
-#[tauri::command]
-fn load_sample_dataset() -> LoadOutcome {
-    match csv_ingest::load_from_str(SAMPLE_CSV) {
         Ok(rows) => LoadOutcome::Dataset(aggregate::build_dataset(&rows)),
         Err(err) => err.into(),
     }
@@ -80,7 +70,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_dataset_from_path,
             load_dataset_from_contents,
-            load_sample_dataset,
             pick_and_load_csv
         ])
         .run(tauri::generate_context!())

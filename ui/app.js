@@ -4,11 +4,14 @@ const invoke = window.__TAURI__.core.invoke;
 
 const $ = (id) => document.getElementById(id);
 
-let DATA = null; // { periods: string[], strata: { name, cells: Cell[] }[] }
+let DATA = null;
 let checkedStrata = new Set();
+let checkedSexes = new Set();
 let strataInitialized = false;
+let sexesInitialized = false;
 
-// ---- VE math (mirrors src-tauri/src/ve_math.rs) ----
+const SEX_LABEL = { F: "F (women)", M: "M (men)" };
+
 const MIN_EVENTS = 10;
 
 function apparentVE(cell) {
@@ -46,7 +49,6 @@ function addCell(a, b) {
   };
 }
 
-// Sum a stratum's cells over an inclusive period-index range.
 function sumRange(stratum, startIdx, endIdx) {
   let cell = emptyCell();
   for (let i = startIdx; i <= endIdx; i++) cell = addCell(cell, stratum.cells[i]);
@@ -59,7 +61,6 @@ function sumStrata(strata, startIdx, endIdx) {
   return cell;
 }
 
-// ---- upload view ----
 function showError(title, messages) {
   $("errorTitle").textContent = title;
   const list = $("errorList");
@@ -81,6 +82,7 @@ function handleOutcome(outcome) {
     clearError();
     DATA = outcome.detail;
     strataInitialized = false;
+    sexesInitialized = false;
     $("uploadView").hidden = true;
     $("appView").hidden = false;
     initAppView();
@@ -106,11 +108,6 @@ function initUploadView() {
     if (outcome) handleOutcome(outcome);
   });
 
-  $("sampleBtn").addEventListener("click", async () => {
-    const outcome = await invoke("load_sample_dataset");
-    handleOutcome(outcome);
-  });
-
   $("reloadBtn").addEventListener("click", () => {
     DATA = null;
     $("appView").hidden = true;
@@ -134,7 +131,6 @@ function initUploadView() {
   });
 }
 
-// ---- app view ----
 function fillPeriodSelects() {
   const start = $("startPeriod"), end = $("endPeriod");
   start.innerHTML = "";
@@ -170,11 +166,52 @@ function renderStratumList() {
   }
 }
 
-function selectedStrata() {
-  return DATA.strata.filter((s) => checkedStrata.has(s.name));
+function renderSexList() {
+  const list = $("sexList");
+  list.innerHTML = "";
+  if (!sexesInitialized) {
+    checkedSexes = new Set(DATA.sexes);
+    sexesInitialized = true;
+  }
+  for (const sex of DATA.sexes) {
+    const wrap = document.createElement("label");
+    wrap.className = "check";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = checkedSexes.has(sex);
+    cb.addEventListener("change", () => {
+      if (cb.checked) checkedSexes.add(sex); else checkedSexes.delete(sex);
+      render();
+    });
+    wrap.appendChild(cb);
+    wrap.appendChild(document.createTextNode(" " + (SEX_LABEL[sex] || sex)));
+    list.appendChild(wrap);
+  }
 }
 
-// ---- Chart.js setup ----
+function cellsFor(stratum) {
+  let cells = DATA.periods.map(() => emptyCell());
+  for (const sex of DATA.sexes) {
+    if (!checkedSexes.has(sex)) continue;
+    const src = stratum.by_sex[sex];
+    if (!src) continue;
+    cells = cells.map((c, i) => addCell(c, src[i]));
+  }
+  return cells;
+}
+
+function selectedStrata() {
+  return DATA.strata
+    .filter((s) => checkedStrata.has(s.name))
+    .map((s) => ({ name: s.name, cells: cellsFor(s) }));
+}
+
+function selectedSexLabel() {
+  const sexes = DATA.sexes.filter((s) => checkedSexes.has(s));
+  if (sexes.length === 0) return "";
+  return " · " + sexes.join("+");
+}
+
 const COLOR = { apparent: "#c0392b", corr: "#1e8449", grid: "#e3e7ec", text: "#5b6675" };
 Chart.defaults.color = COLOR.text;
 Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -304,15 +341,14 @@ function renderTable(rows) {
   }
 }
 
-function timeSeries(stratum, startIdx, endIdx, roll) {
+function timeSeries(stratum, startIdx, endIdx) {
   const labels = [];
   const apparent = [];
   const corr = [];
   const counts = [];
   const reliablePt = [];
   for (let i = startIdx; i <= endIdx; i++) {
-    const ws = Math.max(startIdx, i - roll + 1);
-    const cell = sumRange(stratum, ws, i);
+    const cell = stratum.cells[i];
     const av = apparentVE(cell);
     const cv = correctedVE(cell);
     labels.push(DATA.periods[i]);
@@ -381,8 +417,8 @@ function makeLineChart(canvas, ts) {
               const rel = ts.reliablePt[items[0].dataIndex];
               return [
                 "",
-                `window target: exposed=${c.target_exposed} unexposed=${c.target_unexposed}`,
-                `window reference: exposed=${c.reference_exposed} unexposed=${c.reference_unexposed}`,
+                `target: exposed=${c.target_exposed} unexposed=${c.target_unexposed}`,
+                `reference: exposed=${c.reference_exposed} unexposed=${c.reference_unexposed}`,
                 rel ? "" : "\u26a0 few events \u2014 unstable",
               ];
             },
@@ -403,15 +439,14 @@ function makeLineChart(canvas, ts) {
 }
 
 function renderTimeView(strata, startIdx, endIdx) {
-  const roll = Math.max(1, parseInt($("rollWindow").value, 10));
   const grid = $("timeGrid");
   destroyTimeCharts();
   grid.innerHTML = "";
   $("timeHint").innerHTML =
-    `Trailing ${roll}-period rolling window. Hover for exact values; ` +
+    `Each point is one CSV period. Hover for exact values; ` +
     `drag to select a zoom region (X axis), "Reset zoom" to restore. Faded points = few events (unstable).`;
-  if (strata.length === 0) {
-    grid.innerHTML = `<p class="hint">Select at least one stratum.</p>`;
+  if (strata.length === 0 || checkedSexes.size === 0) {
+    grid.innerHTML = `<p class="hint">Select at least one stratum and one sex.</p>`;
     return;
   }
   for (const s of strata) {
@@ -423,7 +458,7 @@ function renderTimeView(strata, startIdx, endIdx) {
     const meta = document.createElement("p");
     meta.className = "meta";
     meta.textContent =
-      `window total: target exposed=${cell.target_exposed} unexposed=${cell.target_unexposed}, ` +
+      `range total: target exposed=${cell.target_exposed} unexposed=${cell.target_unexposed}, ` +
       `reference exposed=${cell.reference_exposed} unexposed=${cell.reference_unexposed}`;
     const wrap = document.createElement("div");
     wrap.className = "canvas-wrap";
@@ -432,7 +467,7 @@ function renderTimeView(strata, startIdx, endIdx) {
     cellEl.append(head, meta, wrap);
     grid.appendChild(cellEl);
 
-    const ts = timeSeries(s, startIdx, endIdx, roll);
+    const ts = timeSeries(s, startIdx, endIdx);
     timeCharts.push(makeLineChart(canvas, ts));
   }
 }
@@ -446,9 +481,8 @@ function render() {
   const timeMode = $("viewTime").checked;
   $("barsCard").hidden = timeMode;
   $("timeCard").hidden = !timeMode;
-  $("rollRow").style.display = timeMode ? "" : "none";
 
-  const win = `${$("startPeriod").value} \u2192 ${$("endPeriod").value}`;
+  const win = `${$("startPeriod").value} \u2192 ${$("endPeriod").value}${selectedSexLabel()}`;
 
   if (timeMode) {
     $("timeTitle").textContent = `VE over time by stratum  (${win})`;
@@ -468,11 +502,12 @@ let appViewInitialized = false;
 
 function initAppView() {
   fillPeriodSelects();
+  renderSexList();
   renderStratumList();
 
   if (!appViewInitialized) {
     appViewInitialized = true;
-    ["startPeriod", "endPeriod", "showApparent", "showCorr", "viewBars", "viewTime", "rollWindow", "veYMin", "veYMax", "veYHideOut"].forEach((id) =>
+    ["startPeriod", "endPeriod", "showApparent", "showCorr", "viewBars", "viewTime", "veYMin", "veYMax", "veYHideOut"].forEach((id) =>
       $(id).addEventListener("change", render)
     );
     $("selAll").addEventListener("click", () => {

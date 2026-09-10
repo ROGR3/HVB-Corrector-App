@@ -1,12 +1,12 @@
-//! Parsing and validation for the input CSV.
-//!
-//! Expected columns: `period,stratum,group,target_events,reference_events[,population]`
-//! One row per (period, stratum, group). See the format description in
-//! `example_data/README.md`.
-
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
+pub enum Sex {
+    F,
+    M,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Group {
@@ -18,6 +18,7 @@ pub enum Group {
 pub struct Row {
     pub period: String,
     pub stratum: String,
+    pub sex: Sex,
     pub group: Group,
     pub target_events: u64,
     pub reference_events: u64,
@@ -31,7 +32,7 @@ pub enum IngestError {
     #[error("could not read the CSV header: {0}")]
     Header(csv::Error),
     #[error(
-        "missing required column(s): {0}. Expected: period,stratum,group,target_events,reference_events[,population]"
+        "missing required column(s): {0}. Expected: period,stratum,sex,group,target_events,reference_events[,population]"
     )]
     MissingColumns(String),
     #[error("{} row(s) failed validation", .0.len())]
@@ -40,8 +41,6 @@ pub enum IngestError {
 
 #[derive(Debug, Clone)]
 pub struct RowError {
-    /// 1-based row number counting the header as row 1, matching what a
-    /// spreadsheet editor shows, so users can find the offending line.
     pub row: usize,
     pub message: String,
 }
@@ -56,6 +55,7 @@ impl std::fmt::Display for RowError {
 struct RawRow {
     period: String,
     stratum: String,
+    sex: String,
     group: String,
     target_events: String,
     reference_events: String,
@@ -63,9 +63,10 @@ struct RawRow {
     population: String,
 }
 
-const REQUIRED_COLUMNS: [&str; 5] = [
+const REQUIRED_COLUMNS: [&str; 6] = [
     "period",
     "stratum",
+    "sex",
     "group",
     "target_events",
     "reference_events",
@@ -106,7 +107,7 @@ fn load_from_reader<R: std::io::Read>(mut reader: csv::Reader<R>) -> Result<Vec<
     let mut errors = Vec::new();
 
     for (i, result) in reader.deserialize::<RawRow>().enumerate() {
-        let row_num = i + 2; // +1 for 0-index, +1 for the header line
+        let row_num = i + 2;
         let raw = match result {
             Ok(raw) => raw,
             Err(e) => {
@@ -145,6 +146,10 @@ fn validate_row(raw: &RawRow) -> Result<Row, Vec<String>> {
     if raw.stratum.trim().is_empty() {
         errors.push("stratum is empty".to_string());
     }
+    let sex = parse_sex(&raw.sex).or_else(|| {
+        errors.push(format!("sex '{}' must be exactly 'F' or 'M'", raw.sex.trim()));
+        None
+    });
     let group = match raw.group.trim() {
         "exposed" => Some(Group::Exposed),
         "unexposed" => Some(Group::Unexposed),
@@ -166,11 +171,20 @@ fn validate_row(raw: &RawRow) -> Result<Row, Vec<String>> {
     Ok(Row {
         period: raw.period.clone(),
         stratum: raw.stratum.trim().to_string(),
+        sex: sex.expect("validated above"),
         group: group.expect("validated above"),
         target_events: target_events.expect("validated above"),
         reference_events: reference_events.expect("validated above"),
         population,
     })
+}
+
+fn parse_sex(raw: &str) -> Option<Sex> {
+    match raw.trim().to_ascii_uppercase().as_str() {
+        "F" => Some(Sex::F),
+        "M" => Some(Sex::M),
+        _ => None,
+    }
 }
 
 fn is_valid_period(period: &str) -> bool {
@@ -218,6 +232,7 @@ mod tests {
     fn the_shipped_sample_csv_is_valid() {
         let rows = load_from_str(SAMPLE_CSV).unwrap();
         assert!(!rows.is_empty());
+        assert!(rows.iter().all(|r| r.sex == Sex::F));
     }
 
     fn write_csv(contents: &str) -> tempfile::NamedTempFile {
@@ -229,21 +244,22 @@ mod tests {
     #[test]
     fn accepts_a_well_formed_file() {
         let file = write_csv(
-            "period,stratum,group,target_events,reference_events,population\n\
-             2021-03,60-79,exposed,12,340,50000\n\
-             2021-03,60-79,unexposed,45,210,30000\n",
+            "period,stratum,sex,group,target_events,reference_events,population\n\
+             2021-03,60-79,F,exposed,12,340,50000\n\
+             2021-03,60-79,F,unexposed,45,210,30000\n",
         );
         let rows = load(file.path()).unwrap();
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].group, Group::Exposed);
+        assert_eq!(rows[0].sex, Sex::F);
         assert_eq!(rows[0].population, Some(50000));
     }
 
     #[test]
     fn population_column_is_optional() {
         let file = write_csv(
-            "period,stratum,group,target_events,reference_events\n\
-             2021-03,60-79,exposed,12,340\n",
+            "period,stratum,sex,group,target_events,reference_events\n\
+             2021-03,60-79,F,exposed,12,340\n",
         );
         let rows = load(file.path()).unwrap();
         assert_eq!(rows[0].population, None);
@@ -252,9 +268,9 @@ mod tests {
     #[test]
     fn rejects_bad_group_and_negative_counts_with_row_numbers() {
         let file = write_csv(
-            "period,stratum,group,target_events,reference_events\n\
-             2021-03,60-79,vaccinated,12,340\n\
-             2021-04,60-79,exposed,-1,340\n",
+            "period,stratum,sex,group,target_events,reference_events\n\
+             2021-03,60-79,F,vaccinated,12,340\n\
+             2021-04,60-79,F,exposed,-1,340\n",
         );
         let err = load(file.path()).unwrap_err();
         let IngestError::InvalidRows(rows) = err else {
@@ -272,5 +288,29 @@ mod tests {
         let file = write_csv("period,stratum,group\n2021-03,60-79,exposed\n");
         let err = load(file.path()).unwrap_err();
         assert!(matches!(err, IngestError::MissingColumns(_)));
+    }
+
+    #[test]
+    fn rejects_sex_that_is_not_f_or_m() {
+        let file = write_csv(
+            "period,stratum,sex,group,target_events,reference_events\n\
+             2021-03,60-79,X,exposed,12,340\n",
+        );
+        let err = load(file.path()).unwrap_err();
+        let IngestError::InvalidRows(rows) = err else {
+            panic!("expected InvalidRows")
+        };
+        assert_eq!(rows[0].row, 2);
+        assert!(rows[0].message.contains("F"));
+    }
+
+    #[test]
+    fn accepts_lowercase_sex() {
+        let file = write_csv(
+            "period,stratum,sex,group,target_events,reference_events\n\
+             2021-03,60-79,m,exposed,12,340\n",
+        );
+        let rows = load(file.path()).unwrap();
+        assert_eq!(rows[0].sex, Sex::M);
     }
 }

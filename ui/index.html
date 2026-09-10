@@ -16,20 +16,17 @@
     <section id="uploadView" class="card upload-card">
       <h2>Load data</h2>
       <p class="hint">
-        A CSV with one row per (period, stratum, group). Required columns:
-        <code>period,stratum,group,target_events,reference_events</code>, plus an optional
+        A CSV with one row per (period, stratum, sex, group). Required columns:
+        <code>period,stratum,sex,group,target_events,reference_events</code>, plus an optional
         <code>population</code> column (needed only for the apparent estimate).
+        <code>sex</code> must be <code>F</code> or <code>M</code>.
         <code>group</code> must be exactly <code>exposed</code> or <code>unexposed</code>.
       </p>
-      <pre class="format-example">period,stratum,group,target_events,reference_events,population
-2021-03,60-79,exposed,12,340,50000
-2021-03,60-79,unexposed,45,210,30000</pre>
 
       <div id="dropZone" class="drop-zone">
         <p>Drag &amp; drop a CSV file here</p>
         <div class="row">
           <button id="chooseFileBtn" type="button">Choose CSV file&hellip;</button>
-          <button id="sampleBtn" type="button" class="secondary">Load sample data</button>
         </div>
       </div>
 
@@ -55,7 +52,16 @@
             <button id="selAll" type="button">All</button>
             <button id="selNone" type="button">None</button>
           </div>
-          <div id="stratumList" class="stratum-list"></div>
+          <div class="strata-columns">
+            <div class="strata-col">
+              <h3>Group</h3>
+              <div id="stratumList" class="stratum-list"></div>
+            </div>
+            <div class="strata-col">
+              <h3>Sex</h3>
+              <div id="sexList" class="stratum-list"></div>
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -67,9 +73,6 @@
           <div class="row">
             <label class="check"><input type="checkbox" id="showApparent" checked /> Apparent VE</label>
             <label class="check"><input type="checkbox" id="showCorr" checked /> Corrected VE</label>
-          </div>
-          <div class="row" id="rollRow">
-            <label>Rolling window <input type="number" id="rollWindow" value="1" min="1" max="48" step="1" /> periods</label>
           </div>
           <div class="row" id="veYRow">
             <label>Y min <input type="number" id="veYMin" value="-100" step="10" /></label>
@@ -113,10 +116,6 @@
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint">
-          Apparent VE = 1 &minus; (target<sub>exposed</sub>/population<sub>exposed</sub>)/(target<sub>unexposed</sub>/population<sub>unexposed</sub>).
-          Corrected VE = 1 &minus; (target<sub>exposed</sub>&middot;reference<sub>unexposed</sub>)/(reference<sub>exposed</sub>&middot;target<sub>unexposed</sub>).
-        </p>
       </section>
     </section>
   </main>

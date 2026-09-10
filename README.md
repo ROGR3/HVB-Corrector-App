@@ -4,14 +4,15 @@ Desktop app (Tauri + Rust) that compares an apparent (naive) effectiveness
 estimate against a corrected estimate for any before/after intervention where
 you have event counts by period and group.
 
-Upload a CSV, pick a time window and strata, and see apparent vs. corrected
-VE as a bar chart or a time series, with the underlying counts.
+Upload a CSV, pick a time window, sex (F/M), and strata, and see apparent vs.
+corrected VE as a bar chart or a time series, with the underlying counts.
 
 ## CSV format
 
 See [example_data/README.md](example_data/README.md). Short version: one row
-per `(period, stratum, group)`, columns `period,stratum,group,target_events,
-reference_events[,population]`, `group` is `exposed` or `unexposed`.
+per `(period, stratum, sex, group)`, columns `period,stratum,sex,group,target_events,
+reference_events[,population]`. `sex` is `F` or `M`; `group` is `exposed` or
+`unexposed`. The sample file is women only (`F`).
 
 A sample file is in [`example_data/sample.csv`](example_data/sample.csv).
 

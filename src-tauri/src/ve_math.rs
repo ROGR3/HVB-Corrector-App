@@ -1,11 +1,3 @@
-//! Apparent (naive) vs. corrected effectiveness estimate for one 2x2 cell.
-//!
-//! Mirrors `real_data_calculation/ve.py`. The corrected estimate is an odds
-//! ratio and never needs `population` (person-time cancels out); the
-//! apparent estimate does.
-
-/// Below this many events in a cell, flag the estimate as unreliable rather
-/// than hide it -- small samples are still informative, just noisy.
 pub const MIN_EVENTS: u64 = 10;
 
 #[derive(Debug, Clone, Copy, Default, serde::Serialize)]
@@ -67,7 +59,6 @@ mod tests {
             population_exposed: None,
             population_unexposed: None,
         };
-        // From the paper's worked example: corrected VE = 50%.
         let ve = cell.corrected_ve().unwrap();
         assert!((ve - 0.5).abs() < 1e-9, "got {ve}");
     }
@@ -99,9 +90,6 @@ mod tests {
 
     #[test]
     fn corrected_ve_matches_the_data_md_verification_numbers() {
-        // real_data_calculation/DATA.md, NR-vs-Lukas control table, all birth
-        // years, 2020-2023: A=3792 B=109145 C=14965 D=113807 -> corrected VE
-        // is reported there as 73.60%.
         let cell = Cell {
             target_exposed: 3792,
             reference_exposed: 109145,

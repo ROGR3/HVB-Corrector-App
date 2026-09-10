@@ -1,23 +1,21 @@
-//! Groups validated CSV rows into per-stratum, per-period 2x2 cells.
-
 use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::csv_ingest::{Group, Row};
+use crate::csv_ingest::{Group, Row, Sex};
 use crate::ve_math::Cell;
 
 #[derive(Debug, Serialize)]
 pub struct Dataset {
     pub periods: Vec<String>,
+    pub sexes: Vec<Sex>,
     pub strata: Vec<Stratum>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct Stratum {
     pub name: String,
-    /// One cell per period in `Dataset::periods`, in the same order.
-    pub cells: Vec<Cell>,
+    pub by_sex: BTreeMap<Sex, Vec<Cell>>,
 }
 
 pub fn build_dataset(rows: &[Row]) -> Dataset {
@@ -31,6 +29,10 @@ pub fn build_dataset(rows: &[Row]) -> Dataset {
         .map(|(i, p)| (p.as_str(), i))
         .collect();
 
+    let mut sexes: Vec<Sex> = rows.iter().map(|r| r.sex).collect();
+    sexes.sort();
+    sexes.dedup();
+
     let mut stratum_names: Vec<String> = rows.iter().map(|r| r.stratum.clone()).collect();
     stratum_names.sort();
     stratum_names.dedup();
@@ -39,7 +41,7 @@ pub fn build_dataset(rows: &[Row]) -> Dataset {
         .into_iter()
         .map(|name| Stratum {
             name,
-            cells: vec![Cell::default(); periods.len()],
+            by_sex: BTreeMap::new(),
         })
         .collect();
     let stratum_index: BTreeMap<String, usize> = strata
@@ -50,7 +52,11 @@ pub fn build_dataset(rows: &[Row]) -> Dataset {
 
     for row in rows {
         let stratum = &mut strata[stratum_index[&row.stratum]];
-        let cell = &mut stratum.cells[period_index[row.period.as_str()]];
+        let cells = stratum
+            .by_sex
+            .entry(row.sex)
+            .or_insert_with(|| vec![Cell::default(); periods.len()]);
+        let cell = &mut cells[period_index[row.period.as_str()]];
         match row.group {
             Group::Exposed => {
                 cell.target_exposed += row.target_events;
@@ -65,12 +71,13 @@ pub fn build_dataset(rows: &[Row]) -> Dataset {
         }
     }
 
-    Dataset { periods, strata }
+    Dataset {
+        periods,
+        sexes,
+        strata,
+    }
 }
 
-/// Sums population across rows that share a (stratum, period, group), but a
-/// missing value anywhere in that group makes the total unknown rather than
-/// silently treating it as zero.
 fn accumulate(existing: Option<u64>, new: Option<u64>) -> Option<u64> {
     match (existing, new) {
         (None, v) => v,
@@ -87,6 +94,7 @@ mod tests {
     fn row(
         period: &str,
         stratum: &str,
+        sex: Sex,
         group: Group,
         target: u64,
         reference: u64,
@@ -95,6 +103,7 @@ mod tests {
         Row {
             period: period.to_string(),
             stratum: stratum.to_string(),
+            sex,
             group,
             target_events: target,
             reference_events: reference,
@@ -105,31 +114,54 @@ mod tests {
     #[test]
     fn groups_by_stratum_and_period_and_orders_periods() {
         let rows = vec![
-            row("2021-04", "60-79", Group::Exposed, 1, 2, Some(100)),
-            row("2021-03", "60-79", Group::Exposed, 3, 4, Some(200)),
-            row("2021-03", "60-79", Group::Unexposed, 5, 6, Some(300)),
-            row("2021-03", "80+", Group::Exposed, 7, 8, None),
+            row("2021-04", "60-79", Sex::F, Group::Exposed, 1, 2, Some(100)),
+            row("2021-03", "60-79", Sex::F, Group::Exposed, 3, 4, Some(200)),
+            row("2021-03", "60-79", Sex::F, Group::Unexposed, 5, 6, Some(300)),
+            row("2021-03", "80+", Sex::F, Group::Exposed, 7, 8, None),
         ];
         let dataset = build_dataset(&rows);
         assert_eq!(dataset.periods, vec!["2021-03", "2021-04"]);
+        assert_eq!(dataset.sexes, vec![Sex::F]);
         assert_eq!(dataset.strata.len(), 2);
 
         let s6079 = dataset.strata.iter().find(|s| s.name == "60-79").unwrap();
-        assert_eq!(s6079.cells[0].target_exposed, 3);
-        assert_eq!(s6079.cells[0].target_unexposed, 5);
-        assert_eq!(s6079.cells[1].target_exposed, 1);
-        assert_eq!(s6079.cells[1].population_unexposed, None);
+        let cells = &s6079.by_sex[&Sex::F];
+        assert_eq!(cells[0].target_exposed, 3);
+        assert_eq!(cells[0].target_unexposed, 5);
+        assert_eq!(cells[1].target_exposed, 1);
+        assert_eq!(cells[1].population_unexposed, None);
     }
 
     #[test]
     fn sums_multiple_rows_for_the_same_cell() {
         let rows = vec![
-            row("2021-03", "all", Group::Exposed, 1, 1, Some(10)),
-            row("2021-03", "all", Group::Exposed, 2, 2, Some(20)),
+            row("2021-03", "all", Sex::F, Group::Exposed, 1, 1, Some(10)),
+            row("2021-03", "all", Sex::F, Group::Exposed, 2, 2, Some(20)),
         ];
         let dataset = build_dataset(&rows);
-        let cell = &dataset.strata[0].cells[0];
+        let cell = &dataset.strata[0].by_sex[&Sex::F][0];
         assert_eq!(cell.target_exposed, 3);
         assert_eq!(cell.population_exposed, Some(30));
+    }
+
+    #[test]
+    fn keeps_female_and_male_cells_separate() {
+        let rows = vec![
+            row("2021-03", "60-79", Sex::F, Group::Exposed, 1, 2, Some(10)),
+            row("2021-03", "60-79", Sex::M, Group::Exposed, 8, 9, Some(40)),
+        ];
+        let dataset = build_dataset(&rows);
+        assert_eq!(dataset.sexes, vec![Sex::F, Sex::M]);
+        let stratum = &dataset.strata[0];
+        assert_eq!(stratum.by_sex[&Sex::F][0].target_exposed, 1);
+        assert_eq!(stratum.by_sex[&Sex::M][0].target_exposed, 8);
+    }
+
+    #[test]
+    fn serializes_sex_keys_as_f_and_m() {
+        let rows = vec![row("2021-03", "all", Sex::F, Group::Exposed, 1, 1, None)];
+        let json = serde_json::to_value(build_dataset(&rows)).unwrap();
+        assert_eq!(json["sexes"], serde_json::json!(["F"]));
+        assert!(json["strata"][0]["by_sex"].get("F").is_some());
     }
 }

@@ -88,5 +88,5 @@ jobs:
           tagName: v__VERSION__
           releaseName: "HVB Corrector v__VERSION__"
           releaseBody: "See the assets below to download this version."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
