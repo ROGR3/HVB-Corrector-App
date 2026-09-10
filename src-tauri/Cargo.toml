@@ -1,6 +1,6 @@
 [package]
 name = "hvb-corrector-app"
-version = "0.1.1"
+version = "0.1.2"
 description = "HVB corrector: apparent vs. corrected vaccine/intervention effectiveness from a simple CSV"
 edition = "2021"
 rust-version = "1.77"

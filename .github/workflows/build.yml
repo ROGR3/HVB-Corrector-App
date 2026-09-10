@@ -85,6 +85,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # Windows: ship both the NSIS installer and the raw, standalone .exe
+          # (no install step, but needs WebView2 already present; the installer
+          # bootstraps WebView2 if it's missing).
+          uploadPlainBinary: ${{ matrix.platform == 'windows-latest' }}
           tagName: v__VERSION__
           releaseName: "HVB Corrector v__VERSION__"
           releaseBody: "See the assets below to download this version."

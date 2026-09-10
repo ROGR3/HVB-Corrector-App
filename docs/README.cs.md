@@ -45,9 +45,17 @@ Po nahrání CSV souboru (viz níže) uvidíte:
 Přejděte na **[stránku Releases](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**
 a stáhněte soubor pro váš systém. Nic dalšího není potřeba.
 
-- **Windows:** stáhněte instalátor `.exe` (např.
-  `HVB.Corrector_0.1.1_x64-setup.exe`), dvojklikem ho spusťte a
-  postupujte podle instalátoru. Přidá „HVB Corrector" do nabídky Start.
+- **Windows:** na stránce Releases jsou dva soubory `.exe`:
+  - **`hvb-corrector-app.exe`** (samostatný) — dvojklikem spustíte, žádná
+    instalace potřeba. Zkuste tento první.
+  - **`HVB.Corrector_0.1.2_x64-setup.exe`** (instalátor) — použijte jen
+    pokud se samostatný soubor nespustí (obvykle chybí runtime WebView2;
+    instalátor ho automaticky stáhne a nainstaluje). Přidá „HVB Corrector"
+    do nabídky Start.
+
+  V obou případech vás Windows SmartScreen nejspíš varuje před
+  „neznámou aplikací", protože aplikace není podepsaná certifikátem —
+  klikněte na **Další informace → Spustit přesto**.
 - **Linux:**
   - **Debian/Ubuntu a odvozené distribuce:** stáhněte soubor `.deb` a
     nainstalujte ho (dvojklikem, nebo `sudo apt install ./HVB.Corrector_*.deb`).

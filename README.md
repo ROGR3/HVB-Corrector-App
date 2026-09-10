@@ -42,9 +42,17 @@ After loading a CSV file (see below), you get:
 Go to the **[Releases page](https://github.com/ROGR3/HVB-Corrector-App/releases/latest)**
 and download the file for your system. Nothing else is needed.
 
-- **Windows:** download the `.exe` installer (e.g.
-  `HVB.Corrector_0.1.1_x64-setup.exe`), double-click it, and follow the
-  installer. It adds "HVB Corrector" to your Start menu.
+- **Windows:** two `.exe` files are on the Releases page:
+  - **`hvb-corrector-app.exe`** (standalone) — just double-click and run,
+    no install step. Try this first.
+  - **`HVB.Corrector_0.1.2_x64-setup.exe`** (installer) — use this only if
+    the standalone one fails to start (typically means the WebView2
+    runtime is missing; the installer downloads and installs it
+    automatically). Adds "HVB Corrector" to your Start menu.
+
+  Either way, Windows SmartScreen will likely warn about an "unrecognised
+  app" since the app isn't code-signed — click **More info → Run
+  anyway**.
 - **Linux:**
   - **Debian/Ubuntu and derivatives:** download the `.deb` file and
     install it (double-click it, or `sudo apt install ./HVB.Corrector_*.deb`).
@@ -129,8 +137,9 @@ docs/            Czech translation of this README
 
 `.github/workflows/build.yml` runs the test suite on every push/PR, builds
 Linux + Windows installers as workflow artifacts, and — when a commit is
-tagged `v*` (e.g. `v0.1.1`) — publishes those installers to this
-repository's [Releases page](https://github.com/ROGR3/HVB-Corrector-App/releases).
+tagged `v*` (e.g. `v0.1.2`) — publishes those installers (plus the
+standalone Windows `.exe`) to this repository's [Releases
+page](https://github.com/ROGR3/HVB-Corrector-App/releases).
 
 ## Česká verze
 
